@@ -15,6 +15,8 @@ use namelist_module
 !------------------------------------------------------------------------
 
 integer :: userdef_examplevariable      ! You can delete this, just an example
+double precision, allocatable :: spintemp(:)
+double precision :: spintmax=0.d0
 
 contains
 
@@ -128,8 +130,233 @@ end subroutine userdef_prep_model
 ! yourself in the userdef_prep_model() routine above. 
 ! No example given here, because it would interfere with basic operations.
 !------------------------------------------------------------------------
-subroutine userdef_setup_model()
+
+
+
+
+!-------------------------------------------------------------------------
+!                       READ SPINTEMPERATURE
+!-------------------------------------------------------------------------
+
+
+subroutine userdef_setup_model(action)
+
   implicit none
+  integer :: action
+  logical :: fex1,fex2,fex3
+  double precision, allocatable :: data(:)
+  double precision :: dummy
+  integer(kind=8) :: iiformat,reclen,nn,kk
+  integer :: icell,i,ierr,irec,index,idum,style,precis,reclenn
+  !
+  ! Action=0 means do nothing, action=1 means read if not yet read,
+  ! action=2 means re-read.
+  !
+  !
+  ! AF inserted these lines
+  ! taken from the gas density
+  !
+  if(action.eq.0) then
+     return
+  elseif(action.eq.1) then
+     if(allocated(spintemp)) return
+  endif
+  !
+  !
+  !
+  ! AF commented out on 5th February 2016
+  ! since the line broadening shall still be calculated with
+  ! the gas temperature
+  !
+  !
+  !if(action.eq.0) then
+  !   return
+  !elseif(action.eq.1) then
+  !   if(allocated(gastemp)) then
+  !      !
+  !      ! The gas temperature is already determined. It might be
+  !      ! that also the gastmax has been calculated from
+  !      ! this, but we don't know for sure. So let's calculate
+  !      ! it here to make sure gastmax is up-to-date. It
+  !      ! can be important if the gas temperature is created
+  !      ! using the userdef module.
+  !      !
+  !      ! Thanks, Rainer Rolffs, for pointing this out!
+  !      ! 02.01.2011
+  !      !
+  !      gastmax = 0.d0
+  !      do icell=1,nrcells
+  !         index = cellindex(icell)
+  !         if(gastemp(index).gt.gastmax) then
+  !            gastmax = gastemp(index)
+  !         endif
+  !      enddo
+  !      return
+  !   endif
+  !endif
+  !
+  !
+  !
+  ! AF commented out on 5th February 2016
+  ! since also this is not needed
+  ! the spin temperature shall not be equal to dust temperature
+  !
+  ! Default
+  !
+  precis = 8
+  !
+  ! If the user requests, then use one of the dust temperatures as gas
+  ! temperature
+  !
+  ! if(tgas_eq_tdust.gt.0) then
+  !   !
+  !   ! Use dust temperature
+  !   !
+  !   ! First make sure the dust data are read
+  !   ! if they are not already read yet
+  !   !
+  !   call read_dustdata(1)
+  !   call read_dust_density(1)
+  !   call read_dust_temperature(1)
+  !   !
+  !   ! Check something
+  !   !
+  !   if(tgas_eq_tdust.gt.dust_nr_species) then
+  !      write(stdo,*) 'ERROR: tgas_eq_tdust is larger than dust_nr_species'
+  !      stop
+  !   endif
+  !   !
+  !   ! Allocate array
+  !   !
+  !   if(allocated(gastemp)) deallocate(gastemp)
+  !   allocate(gastemp(1:nrcells),STAT=ierr)
+  !   if(ierr.ne.0) then
+  !      write(stdo,*) 'ERROR: Could not allocate gastemp array'
+  !      stop
+  !   endif
+  !   write(stdo,*) 'Using dust temperature as gas temperature...'
+  !   call flush(stdo)
+  !   !
+  !
+  !   ! Now go and map the temperature
+  !   !
+  !   do icell=1,nrcells
+  !      index = cellindex(icell)
+  !      if((index.le.0).or.(index.gt.nrcellsmax)) then
+  !         write(stdo,*) 'ERROR: Internal error while reading gas temperature'
+  !         stop
+  !      endif
+  !      gastemp(index) = dusttemp(tgas_eq_tdust,index)
+  !   enddo
+  !else
+     !
+     ! Open temperature file
+     !
+     inquire(file='gas_spintemperature.inp',exist=fex1)
+     inquire(file='gas_spintemperature.uinp',exist=fex2)
+     inquire(file='gas_spintemperature.binp',exist=fex3)
+     idum=0
+     if(fex1) idum=idum+1
+     if(fex2) idum=idum+1
+     if(fex3) idum=idum+1
+     if(idum.gt.1) then
+        write(stdo,*) 'ERROR: Found more than one file gas_spintemperature.*inp'
+        stop
+     endif
+     if(idum.eq.0) then
+        write(stdo,*) 'ERROR: Could not find any gas_spintemperature.*inp file...'
+        stop
+     endif
+     write(stdo,*) 'Reading spintemperature...'
+     call flush(stdo)
+     !
+     ! Now read this temperature
+     !
+     if(fex1) then
+        write(stdo,*) 'Fex1 format loop is called'
+        !
+        ! Formatted gas temperature file
+        !
+        style = 1
+        open(unit=1,file='gas_spintemperature.inp',status='old')
+        read(1,*) iiformat
+        if(iiformat.ne.1) then
+           write(stdo,*) 'ERROR: Format number of gas_spintemperature.inp is invalid/unknown.'
+           stop
+        endif
+        read(1,*) nn
+        write(stdo,*) 'and here nn is'
+        write(stdo,*) nn
+     elseif(fex2) then
+        write(stdo,*) 'Fex2 format loop is called'
+        !
+        ! F77-style unformatted input of spintemperature
+        !
+        style = 2
+        open(unit=1,file='gas_spintemperature.uinp',status='old',form='unformatted')
+        read(1) iiformat,reclen
+        if(iiformat.ne.1) then
+           write(stdo,*) 'ERROR: Format number of gas_spintemperature.uinp is invalid/unknown.'
+           stop
+        endif
+        reclenn=reclen
+        read(1) nn
+     else
+        !
+        ! Binary input: C-compliant unformatted streaming data
+        !
+        style = 3
+        open(unit=1,file='gas_spintemperature.binp',status='old',access='stream')
+        read(1) iiformat
+        if(iiformat.ne.1) then
+           write(stdo,*) 'ERROR: Format number of gas_spintemperature.binp is invalid/unknown.'
+           stop
+        endif
+        read(1) nn
+        precis = nn
+        read(1) nn
+     endif
+     !
+     ! Do some checks
+     !
+     if(nn.ne.nrcellsinp) then
+        write(stdo,*) 'ERROR: gas_spintemperature.*inp does not have same number'
+        write(stdo,*) '       of cells as the grid.'
+        write(stdo,*) nn,nrcellsinp
+        stop
+     endif
+     !
+     ! Allocate array
+     !
+     if(allocated(spintemp)) deallocate(spintemp)
+     allocate(spintemp(1:nrcells),STAT=ierr)
+     if(ierr.ne.0) then
+        write(stdo,*) 'ERROR: Could not allocate spintemp array'
+        stop
+     endif
+     !
+     ! Now read the spin temperature
+     !
+     call read_scalarfield(1,style,precis,nrcellsinp,1,1,1,1,1d-99,reclenn, &
+                           scalar0=spintemp)
+     !
+     ! Close the file
+     !
+     close(1)
+     !
+  !endif !! commented out since the if and else statements above are no longer there
+  !
+  ! Compute the maximum temperature
+  !
+  spintmax = 0.d0
+  do icell=1,nrcells
+     index = cellindex(icell)
+     if(spintemp(index).gt.spintmax) then
+        spintmax = spintemp(index)
+     endif
+  enddo
+  !
+!end subroutine read_spintemperature
 end subroutine userdef_setup_model
 
 

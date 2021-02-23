@@ -6133,6 +6133,11 @@ subroutine lines_serial_addto_jnu_alpnu(nrfreq,inu0,inu1,freq,src,alp)
            !
            call hunt(lines_partition_temperature(:,ispec),               &
                      lines_partition_ntemp(ispec),lines_ray_temp(1),itemp)
+
+	   ! AF 06.04.2017
+	   write(stdo,*) '*** here lines_module.f90, call HUNT in lines_serial_addto_jnu_alpnu ***'
+	   write(stdo,*) 'CAUTION, please check whether some temperatures has to be switched to the spin temperature'
+
            if(itemp.ge.lines_partition_ntemp(ispec)) then
               write(stdo,*) 'ERROR: Temperature out of range of partition function '
               write(stdo,*) '       for ispec=',ispec,' Temperature = ',lines_ray_temp(1)
@@ -6146,6 +6151,11 @@ subroutine lines_serial_addto_jnu_alpnu(nrfreq,inu0,inu1,freq,src,alp)
               eps = (lines_ray_temp(1)-lines_partition_temperature(itemp,ispec)) / &
                     (lines_partition_temperature(itemp+1,ispec)-                   &
                      lines_partition_temperature(itemp,ispec))
+
+	      ! AF 06.04.2017
+	      write(stdo,*) '*** here lines_module.f90, calculate EPS in lines_serial_addto_jnu_alpnu ***'
+	      write(stdo,*) 'CAUTION, please check whether some temperatures has to be switched to the spin temperature'
+
            else
               itemp = 1
               eps   = 0.d0
@@ -6173,6 +6183,9 @@ subroutine lines_serial_addto_jnu_alpnu(nrfreq,inu0,inu1,freq,src,alp)
         ! Compute Gaussian line width
         !
         a = sqrt(lines_ray_turb(1)**2 + 2*kk*lines_ray_temp(1)/lines_umass(ispec))
+	! AF 06.04.2017
+	write(stdo,*)'*** Here the lines_ray_temp is called to calculate a  ***'
+	write(stdo,*)'*** and it should be the gas temperature in this case ***'
         !
         ! Loop over all active lines
         !
@@ -6206,6 +6219,12 @@ subroutine lines_serial_addto_jnu_alpnu(nrfreq,inu0,inu1,freq,src,alp)
               call lines_linelist_compute_ltepop(ispec,iline,         &
                    lines_ray_nrdens(ispec,1),lines_ray_temp(1),       &
                    lines_psum_local(ispec),ndown,nup)
+
+	      ! AF 06.04.2017
+	      write(stdo,*) '*** here lines_module.f90, call lines_linelist_compute_ltepop ***'
+	      write(stdo,*) '*** in lines_serial_addto_jnu_alpnu                           ***'
+	      write(stdo,*) 'CAUTION, please check whether some temperatures has to be switched to the spin temperature'
+
               !
               ! The ratio of statistical weights:
               !
@@ -6544,6 +6563,11 @@ subroutine lines_get_active_nup_ndown(nlines,nup,ndown)
             !
             call hunt(lines_partition_temperature(:,ispec),               &
                       lines_partition_ntemp(ispec),lines_ray_temp(1),itemp)
+
+	    write(stdo,*) '*** here lines_module.f90, call HUNT ***'
+	    write(stdo,*) '*** in lines_get_active_nup_ndown    ***'
+	    write(stdo,*) 'CAUTION, please check whether some temperatures has to be switched to the spin temperature'
+
             if(itemp.ge.lines_partition_ntemp(ispec)) then
                write(stdo,*) 'ERROR: Temperature out of range of partition function '
                write(stdo,*) '       for ispec=',ispec,' Temperature = ',lines_ray_temp(1)
@@ -6557,6 +6581,13 @@ subroutine lines_get_active_nup_ndown(nlines,nup,ndown)
                eps = (lines_ray_temp(1)-lines_partition_temperature(itemp,ispec)) / &
                      (lines_partition_temperature(itemp+1,ispec)-                   &
                       lines_partition_temperature(itemp,ispec))
+
+	      ! AF 06.04.2017
+	      write(stdo,*) '*** here lines_module.f90, calculate eps ***'
+	      write(stdo,*) '*** in lines_get_active_nup_ndown        ***'
+	      write(stdo,*) 'CAUTION, please check whether some temperatures has to be switched to the spin temperature'
+
+
             else
                itemp = 1
                eps   = 0.d0
@@ -6610,6 +6641,12 @@ subroutine lines_get_active_nup_ndown(nlines,nup,ndown)
             call lines_linelist_compute_ltepop(ispec,iline,         &
                  lines_ray_nrdens(ispec,1),lines_ray_temp(1),       &
                  lines_psum_local(ispec),nd,nu)
+
+	      ! AF 06.04.2017
+	      write(stdo,*) '*** here lines_module.f90, call lines_linelist_compute_ltepop ***'
+	      write(stdo,*) '*** in lines_get_active_nup_ndown                             ***'
+	      write(stdo,*) 'CAUTION, please check whether some temperatures has to be switched to the spin temperature'
+
             ndown(icnt) = nd
             nup(icnt)   = nu
          endif

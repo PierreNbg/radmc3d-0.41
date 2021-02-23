@@ -436,10 +436,16 @@ subroutine lines_compute_and_store_local_populations(action)
         stop 
      endif
   endif
-  if(.not.allocated(gastemp)) then
+  ! changed by AF, 10.02.2016
+  if(.not.allocated(spintemp)) then
      write(stdo,*) 'ERROR: Wanting to compute level populations '
      write(stdo,*) '       according to LTE prescription, but'
-     write(stdo,*) '       gastemp array not allocated.'
+     write(stdo,*) '       spintemp array not allocated.'
+     write(stdo,*) 'WARNING: You are using the userdef version.'
+     write(stdo,*) '         This was written for HI maps'
+     write(stdo,*) '         and distinguish between gastemp and spintemp'
+     write(stdo,*) '         gastemp: used for line broadening'
+     write(stdo,*) '         spintemp: used for level population'
      stop
   endif
   if(.not.allocated(gas_chemspec_numberdens)) then
@@ -484,10 +490,12 @@ subroutine lines_compute_and_store_local_populations(action)
            !
            ! LTE populations
            !
+	   ! AF: 10.02.2016
+           !     spintemperature instead of gastemperature for lines_compute_ltepop
            do ispec=1,lines_nr_species
               if(lines_species_fullmolec(ispec)) then
                  call lines_compute_ltepop(ispec,             &
-                      lines_nrlevels(ispec),gastemp(index),   &
+                      lines_nrlevels(ispec),spintemp(index),   &
                       gas_chemspec_numberdens(ispec,index),   &
                       pop(:,ispec))
               endif
@@ -770,12 +778,14 @@ subroutine sources_get_src_alp(inu0,inu1,nf,src,alp,inclstokes)
            !
            ! On-the-fly LTE population calculation
            !
+	   ! AF 10.02.2016
+	   ! here again: replaced gastemp with spintemp
            do ispec=1,lines_nr_species
               if(lines_species_fullmolec(ispec)) then
                  call lines_compute_ltepop_subset(lines_nrlevels(ispec),    &
                       active_nrlevels(ispec),                               &
                       active_levels(:,ispec),                               &
-                      ispec,gastemp(ray_index),                             &
+                      ispec,spintemp(ray_index),                             &
                       gas_chemspec_numberdens(ispec,ray_index),             &
                       lines_ray_levpop(:,ispec,1))
               endif

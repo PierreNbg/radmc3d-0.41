@@ -575,7 +575,8 @@ program radmc3d
   ! Any arrays that will be set by the userdef_setup_model() routine
   ! here will automatically not be read anymore later. 
   !
-  call userdef_setup_model()
+  ! AF changed to 1
+  call userdef_setup_model(1)
   !
   ! Read the continuous stellar sources if present, and if the userdef
   ! module has not yet set it up.

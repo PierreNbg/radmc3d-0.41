@@ -5584,7 +5584,10 @@ subroutine camera_ray1d_raytrace(nrfreq,x,y,z,dx,dy,dz,distance,celldxmin,&
            !
            ! Set the gas temperature
            !
-           lines_ray_temp(is)    = gastemp(ray_index)
+	   ! AF 10.02.2016:
+	   ! distinguish between gas temperature and the spin temperature
+           !lines_ray_temp(is)    = gastemp(ray_index)
+           lines_ray_temp(is)    = spintemp(ray_index)
            !
            ! Set the microturbulence
            !
@@ -5607,6 +5610,8 @@ subroutine camera_ray1d_raytrace(nrfreq,x,y,z,dx,dy,dz,distance,celldxmin,&
               !
               ! We compute the level populations on-the-fly
               !
+	      ! AF 10.02.2016:
+	      ! the gastemperature is replaced by the spintemperature
               do ispec=1,lines_nr_species
                  call lines_compute_ltepop_subset(lines_nrlevels(ispec),    &
                         active_nrlevels(ispec),                             &
